@@ -1,7 +1,12 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, Alert, Dimensions } from "react-native";
+import { View, Text, Alert, Dimensions, Image } from "react-native";
 import { CameraView, Camera } from "expo-camera";
-import Modal from "react-native-modal"; // For modal animations
+import Modal from "react-native-modal";
+import Header from "../../components/Header";
+import { images } from "../../constants";
+import { SafeAreaView } from "react-native-safe-area-context";
+import nsfBadge from "../../assets/nsf_certified.png";
+import informedSportBadge from "../../assets/informed_sport.png";
 
 const { width, height } = Dimensions.get("window");
 const innerDimension = 300; // Size of the scan area
@@ -12,6 +17,12 @@ export default function Scan() {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [productDetails, setProductDetails] = useState(null);
   const [isScanning, setIsScanning] = useState(true); // Control scanning
+
+  // Map of labels to badge images
+  const labelImages = {
+    "nsf-sport-certified": nsfBadge,
+    "informed-sport-certified": informedSportBadge,
+  };
 
   // Request camera permissions
   useEffect(() => {
@@ -39,11 +50,43 @@ export default function Scan() {
       const data = await response.json();
 
       if (data.status === 1) {
-        setProductDetails(data.product); // Save product details
-        setIsModalVisible(true); // Show modal with details
+        const product = data.product;
+
+        // Normalize labels by removing language prefixes
+        const rawLabels = product.labels_tags || [];
+        console.log("Raw Labels from API: ", rawLabels);
+
+        const labels = rawLabels.map((label) => label.split(":").pop().trim()); // Normalize
+        console.log("Normalized Labels: ", labels);
+
+        const ingredients = product.ingredients_text || "No ingredients available";
+
+        // Determine badge images based on normalized labels
+        const matchingLabels = labels.filter((label) => label in labelImages);
+        console.log("Matching Labels: ", matchingLabels);
+
+        const badges = matchingLabels.map((label) => ({
+          label: label.replace(/-/g, " "), // Format for display
+          image: labelImages[label], // Map to image
+        }));
+        console.log("Badges: ", badges);
+
+        setProductDetails({
+          name: product.product_name || "Unknown",
+          labels, // Store normalized labels
+          ingredients,
+          badges,
+        });
+
+        setIsModalVisible(true);
       } else {
-        setProductDetails("Sorry: This product isn't in our database."); // Save product details
-        setIsModalVisible(true); // Show modal with details
+        setProductDetails({
+          name: "Unknown Product",
+          labels: [],
+          ingredients: "No ingredients available",
+          badges: [],
+        });
+        setIsModalVisible(true);
       }
     } catch (error) {
       Alert.alert("Error", "Failed to fetch product details.");
@@ -79,35 +122,56 @@ export default function Scan() {
 
   return (
     <View className="flex-1 bg-black">
-      {/* Camera View with Barcode Scanner */}
+      {/* Header */}
+      <SafeAreaView className="bg-[#161622] z-10">
+        <Header
+          greetingText="Supplement"
+          userName="Scanner"
+          logoSource={images.logoSmall}
+        />
+      </SafeAreaView>
+
+      {/* Camera View */}
       <CameraView
         onBarcodeScanned={isScanning ? handleBarcodeScanned : undefined}
         barcodeScannerSettings={{
-          barcodeTypes: ["qr", "ean13", "ean8", "upc_a", "upc_e"], // Add barcode types as needed
+          barcodeTypes: ["qr", "ean13", "ean8", "upc_a", "upc_e"],
         }}
-        className="absolute top-0 left-0 right-0 bottom-0"
+        className="flex-1"
       />
 
-      {/* Custom Overlay */}
+      {/* Scanner Overlay */}
       <View className="absolute top-0 left-0 w-full h-full">
         {/* Top Overlay */}
-        <View className="bg-black opacity-60" style={{ height: (height - innerDimension) / 2 }} />
+        <View
+          className="bg-black opacity-60"
+          style={{ height: (height - innerDimension) / 2 }}
+        />
 
         {/* Middle Row */}
         <View className="flex-row">
-          <View className="bg-black opacity-60" style={{ width: (width - innerDimension) / 2 }} />
+          <View
+            className="bg-black opacity-60"
+            style={{ width: (width - innerDimension) / 2 }}
+          />
           <View
             className="border-2 border-orange-500 rounded-lg"
             style={{ width: innerDimension, height: innerDimension }}
           />
-          <View className="bg-black opacity-60" style={{ width: (width - innerDimension) / 2 }} />
+          <View
+            className="bg-black opacity-60"
+            style={{ width: (width - innerDimension) / 2 }}
+          />
         </View>
 
         {/* Bottom Overlay */}
-        <View className="bg-black opacity-60" style={{ height: (height - innerDimension) / 2 }} />
+        <View
+          className="bg-black opacity-60"
+          style={{ height: (height - innerDimension) / 2 }}
+        />
       </View>
 
-      {/* Modal for Product Details */}
+      {/* Modal */}
       {productDetails && (
         <Modal
           isVisible={isModalVisible}
@@ -117,15 +181,51 @@ export default function Scan() {
           animationIn="slideInUp"
           animationOut="slideOutDown"
         >
-          <View className="bg-orange-500 rounded-t-2xl p-4">
-            <Text className="text-white text-lg font-bold mb-2">
-              Product Name: {productDetails.product_name || "Unknown"}
+          <View style={{ backgroundColor: "#FFA500", borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 16 }}>
+            <Text style={{ color: "white", fontSize: 18, fontWeight: "bold", marginBottom: 8 }}>
+              Product Name: {productDetails.name}
             </Text>
-            <Text className="text-white text-sm mb-2">
-              Ingredients: {productDetails.ingredients_text || "No ingredients available"}
+
+            {/* Display Labels */}
+            {productDetails.labels.length > 0 ? (
+              <View style={{ marginBottom: 16 }}>
+              <Text style={{ color: "white", fontSize: 14, fontWeight: "bold" }}>Certifications & Labels:</Text>
+              
+              {productDetails.labels
+                .filter((label) => !productDetails.badges.some((badge) => badge.label.toLowerCase() === label.replace(/-/g, " ").toLowerCase()))
+                .map((label, index) => (
+                  <Text key={index} style={{ color: "white", fontSize: 14 }}>
+                    - {label.replace(/-/g, " ")} {/* Replace hyphens with spaces */}
+                  </Text>
+                ))}
+            
+              {/* Display Badge Images */}
+              <View style={{ flexDirection: "row", marginTop: 8 }}>
+                {productDetails.badges.map((badge, index) => (
+                  <View key={index} style={{ marginRight: 16, alignItems: "center" }}>
+                    <Text style={{ color: "white", fontSize: 12, marginBottom: 4 }}>{badge.label}</Text>
+                    <Image
+                      source={badge.image}
+                      style={{ width: 48, height: 48 }}
+                      resizeMode="contain"
+                    />
+                  </View>
+                ))}
+              </View>
+            </View>
+            ) : (
+              <Text style={{ color: "white", fontSize: 14, marginBottom: 8 }}>
+                No certifications or labels available.
+              </Text>
+            )}
+
+            {/* Display Ingredients */}
+            <Text style={{ color: "white", fontSize: 14, marginBottom: 8 }}>
+              Ingredients: {productDetails.ingredients}
             </Text>
+
             <Text
-              className="text-white text-center mt-2 underline"
+              style={{ color: "white", textAlign: "center", textDecorationLine: "underline", marginTop: 8 }}
               onPress={closeModal}
             >
               Close

@@ -32,9 +32,9 @@ export default function Layout() {
     >
       {/* Home Tab */}
       <Tabs.Screen
-        name="home"
+        name="shop"
         options={{
-          title: 'Home',
+          title: 'Shop',
           headerShown: false,
           tabBarIcon: ({ color }) => <TabIcon icon={icons.home} color={color} />,
         }}
@@ -58,7 +58,8 @@ export default function Layout() {
         }}
       />
 
-      {/* Welcome Tab (Profile Entry Point) */}
+
+      {/* Use this later once we create the profile tab! */}
       <Tabs.Screen
         name="profile"
         options={{

@@ -7,6 +7,8 @@ import { images } from "../../constants";
 import { SafeAreaView } from "react-native-safe-area-context";
 import nsfBadge from "../../assets/nsf_certified.png";
 import informedSportBadge from "../../assets/informed_sport.png";
+import axios from "axios"; 
+
 
 const { width, height } = Dimensions.get("window");
 const innerDimension = 300; // Size of the scan area
@@ -41,43 +43,76 @@ export default function Scan() {
     await fetchProductDetails(data); // Fetch product details from API
   };
 
-  // Fetch product details from OpenFoodFacts API
+  const fetchOpenAIAnalysis = async (prompt) => {
+    try {
+      const response = await axios.post(
+        "https://api.openai.com/v1/chat/completions", // Correct endpoint for chat models
+        {
+          model: "gpt-4o-mini", // Use the correct model
+          messages: [
+            { role: "system", content: "You are a helpful nutrition expert." }, // System role
+            { role: "user", content: prompt }, // User role with the prompt
+          ],
+          max_tokens: 100, // Limit the number of tokens in the response
+          temperature: 0.7, // Adjust creativity level
+        },
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${process.env.OPENAI_API_KEY}`, // API key for authentication
+          },
+        }
+      );
+  
+      // Extract the content of the assistant's response
+      return response.data.choices[0].message.content.trim();
+    } catch (error) {
+      console.error("OpenAI API Error:", error.response?.data || error.message);
+      throw new Error("Failed to fetch analysis from OpenAI");
+    }
+  };
+
+  
   const fetchProductDetails = async (barcode) => {
     try {
       const response = await fetch(
         `https://world.openfoodfacts.org/api/v0/product/${barcode}.json`
       );
       const data = await response.json();
-
+  
       if (data.status === 1) {
         const product = data.product;
-
-        // Normalize labels by removing language prefixes
+  
         const rawLabels = product.labels_tags || [];
-        console.log("Raw Labels from API: ", rawLabels);
-
-        const labels = rawLabels.map((label) => label.split(":").pop().trim()); // Normalize
-        console.log("Normalized Labels: ", labels);
-
+        const labels = rawLabels.map((label) => label.split(":").pop().trim());
         const ingredients = product.ingredients_text || "No ingredients available";
-
-        // Determine badge images based on normalized labels
+  
         const matchingLabels = labels.filter((label) => label in labelImages);
-        console.log("Matching Labels: ", matchingLabels);
-
         const badges = matchingLabels.map((label) => ({
-          label: label.replace(/-/g, " "), // Format for display
-          image: labelImages[label], // Map to image
+          label: label.replace(/-/g, " "),
+          image: labelImages[label],
         }));
-        console.log("Badges: ", badges);
+  
+        const prompt = `
+          You are a sports nutrition expert. Based on the following product information, provide a brief summary (2–3 sentences) explaining how 
+          this product might impact an athlete's performance, energy, or recovery. Keep it simple and focused on practical benefits or 
+          potential risks for athletes.
 
+          Product Name: ${product.product_name || "Unknown"}
+          Ingredients: ${ingredients}
+          Labels: ${labels.join(", ")}
+        `;
+  
+        const analysis = await fetchOpenAIAnalysis(prompt);
+  
         setProductDetails({
           name: product.product_name || "Unknown",
-          labels, // Store normalized labels
+          labels,
           ingredients,
           badges,
+          analysis,
         });
-
+  
         setIsModalVisible(true);
       } else {
         setProductDetails({
@@ -85,40 +120,26 @@ export default function Scan() {
           labels: [],
           ingredients: "No ingredients available",
           badges: [],
+          analysis: "No analysis available.",
         });
         setIsModalVisible(true);
       }
     } catch (error) {
-      Alert.alert("Error", "Failed to fetch product details.");
+      Alert.alert("Error", "Failed to fetch product details or generate analysis.");
       console.error(error);
       setScannedBarcode(null); // Reset for next scan
     } finally {
-      setIsScanning(true); // Re-enable scanning
+      setIsScanning(true);
     }
   };
 
-  // Reset the state for the next scan when modal is closed
   const closeModal = () => {
-    setIsModalVisible(false);
-    setScannedBarcode(null); // Allow scanning again
+    setIsModalVisible(false); // Close the modal
+    setScannedBarcode(null); // Reset the scanned barcode
     setIsScanning(true); // Re-enable scanning
   };
+  
 
-  if (hasPermission === null) {
-    return (
-      <View className="flex-1 justify-center items-center">
-        <Text className="text-white text-lg">Requesting for camera permission...</Text>
-      </View>
-    );
-  }
-
-  if (hasPermission === false) {
-    return (
-      <View className="flex-1 justify-center items-center">
-        <Text className="text-white text-lg">No access to camera</Text>
-      </View>
-    );
-  }
 
   return (
     <View className="flex-1 bg-black">
@@ -174,64 +195,81 @@ export default function Scan() {
       {/* Modal */}
       {productDetails && (
         <Modal
-          isVisible={isModalVisible}
-          onSwipeComplete={closeModal}
-          swipeDirection="down"
-          style={{ justifyContent: "flex-end", margin: 0 }}
-          animationIn="slideInUp"
-          animationOut="slideOutDown"
-        >
-          <View style={{ backgroundColor: "#FFA500", borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 16 }}>
-            <Text style={{ color: "white", fontSize: 18, fontWeight: "bold", marginBottom: 8 }}>
-              Product Name: {productDetails.name}
+        isVisible={isModalVisible}
+        onSwipeComplete={closeModal}
+        swipeDirection="down"
+        style={{ justifyContent: "flex-end", margin: 0 }}
+        animationIn="slideInUp"
+        animationOut="slideOutDown"
+      >
+        <View style={{ backgroundColor: "#FFF5EB", borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 24 }}>
+          {/* Product Name */}
+          <View style={{ marginBottom: 16 }}>
+            <Text style={{ color: "#FF6F00", fontSize: 20, fontWeight: "bold", textAlign: "center" }}>
+              {productDetails.name}
             </Text>
-
-            {/* Display Labels */}
-            {productDetails.labels.length > 0 ? (
-              <View style={{ marginBottom: 16 }}>
-              <Text style={{ color: "white", fontSize: 14, fontWeight: "bold" }}>Certifications & Labels:</Text>
-              
-              {productDetails.labels
-                .filter((label) => !productDetails.badges.some((badge) => badge.label.toLowerCase() === label.replace(/-/g, " ").toLowerCase()))
-                .map((label, index) => (
-                  <Text key={index} style={{ color: "white", fontSize: 14 }}>
-                    - {label.replace(/-/g, " ")} {/* Replace hyphens with spaces */}
-                  </Text>
-                ))}
-            
-              {/* Display Badge Images */}
-              <View style={{ flexDirection: "row", marginTop: 8 }}>
+          </View>
+      
+          {/* Certifications & Labels */}
+          {productDetails.labels.length > 0 && (
+            <View style={{ marginBottom: 16 }}>
+              <Text style={{ color: "#333", fontSize: 16, fontWeight: "bold", marginBottom: 8 }}>
+                Certifications & Labels
+              </Text>
+              <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
                 {productDetails.badges.map((badge, index) => (
-                  <View key={index} style={{ marginRight: 16, alignItems: "center" }}>
-                    <Text style={{ color: "white", fontSize: 12, marginBottom: 4 }}>{badge.label}</Text>
+                  <View key={index} style={{ alignItems: "center", marginRight: 16, marginBottom: 8 }}>
                     <Image
                       source={badge.image}
-                      style={{ width: 48, height: 48 }}
+                      style={{ width: 48, height: 48, marginBottom: 4 }}
                       resizeMode="contain"
                     />
+                    <Text style={{ color: "#555", fontSize: 12, textAlign: "center" }}>{badge.label}</Text>
                   </View>
                 ))}
               </View>
             </View>
-            ) : (
-              <Text style={{ color: "white", fontSize: 14, marginBottom: 8 }}>
-                No certifications or labels available.
+          )}
+      
+          {/* Ingredients */}
+          {productDetails.ingredients && (
+            <View style={{ marginBottom: 16, padding: 16, backgroundColor: "#FFFAF0", borderRadius: 12 }}>
+              <Text style={{ color: "#333", fontSize: 16, fontWeight: "bold", marginBottom: 8 }}>
+                Ingredients
               </Text>
-            )}
-
-            {/* Display Ingredients */}
-            <Text style={{ color: "white", fontSize: 14, marginBottom: 8 }}>
-              Ingredients: {productDetails.ingredients}
-            </Text>
-
+              <Text style={{ color: "#666", fontSize: 14 }}>{productDetails.ingredients}</Text>
+            </View>
+          )}
+      
+          {/* AI Analysis */}
+          {productDetails.analysis && (
+            <View style={{ marginBottom: 16, padding: 16, backgroundColor: "#FFF3E0", borderRadius: 12 }}>
+              <Text style={{ color: "#333", fontSize: 16, fontWeight: "bold", marginBottom: 8 }}>
+                AI Analysis
+              </Text>
+              <Text style={{ color: "#666", fontSize: 14, lineHeight: 20 }}>
+                {productDetails.analysis}
+              </Text>
+            </View>
+          )}
+      
+          {/* Close Button */}
+          <View style={{ alignItems: "center", marginTop: 16 }}>
             <Text
-              style={{ color: "white", textAlign: "center", textDecorationLine: "underline", marginTop: 8 }}
+              style={{
+                color: "#FF6F00",
+                fontSize: 16,
+                textAlign: "center",
+                textDecorationLine: "underline",
+              }}
               onPress={closeModal}
             >
               Close
             </Text>
           </View>
-        </Modal>
+        </View>
+      </Modal>
+      
       )}
     </View>
   );

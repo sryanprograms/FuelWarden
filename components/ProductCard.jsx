@@ -1,34 +1,25 @@
 import React from "react";
-import { View, Text, Image, TouchableOpacity, Linking } from "react-native";
+import { View, Text, Image, TouchableOpacity, Linking, StyleSheet } from "react-native";
 
 const ProductCard = ({ title, thumbnail, description, purchaseLink }) => {
   return (
-    <View
-      className="flex flex-col bg-gray-900 p-4 mb-6 rounded-lg border border-gray-700 shadow-lg mx-4"
-      style={{
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.25,
-        shadowRadius: 3.84,
-        elevation: 5,
-      }}
-    >
+    <View style={styles.card}>
       {/* Thumbnail */}
       <Image
         source={{ uri: thumbnail }}
-        className="w-full h-40 rounded-lg"
+        style={styles.image}
         resizeMode="cover"
       />
 
       {/* Text content */}
-      <View className="mt-4">
+      <View style={styles.textContainer}>
         {/* Title */}
-        <Text className="text-lg font-semibold text-white" numberOfLines={1}>
+        <Text style={styles.title} numberOfLines={1}>
           {title}
         </Text>
 
         {/* Description */}
-        <Text className="text-sm text-gray-400 mt-2" numberOfLines={2}>
+        <Text style={styles.description} numberOfLines={2}>
           {description}
         </Text>
 
@@ -36,21 +27,65 @@ const ProductCard = ({ title, thumbnail, description, purchaseLink }) => {
         <TouchableOpacity
           onPress={() => {
             if (purchaseLink) {
-              Linking.openURL(purchaseLink)
-                .catch(err => console.error("Failed to open URL: ", err)); // Error handling
+              Linking.openURL(purchaseLink).catch((err) =>
+                console.error("Failed to open URL: ", err)
+              );
             }
           }}
-          className="mt-4 bg-secondary-100 py-2 px-4 rounded-lg"
-          style={{
-            //backgroundColor: "#4f8ef7", // Custom button color
-            alignItems: "center",
-          }}
+          style={styles.button}
         >
-          <Text className="text-sm text-white font-semibold">Buy Now</Text>
+          <Text style={styles.buttonText}>Learn More</Text>
         </TouchableOpacity>
       </View>
     </View>
   );
 };
+
+const styles = StyleSheet.create({
+  card: {
+    flex: 1,
+    backgroundColor: "#22222E",
+    borderRadius: 10,
+    margin: 8,
+    overflow: "hidden",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  image: {
+    width: "100%",
+    height: 120,
+    borderTopLeftRadius: 10,
+    borderTopRightRadius: 10,
+  },
+  textContainer: {
+    padding: 10,
+  },
+  title: {
+    fontSize: 14,
+    fontWeight: "bold",
+    color: "#FFF",
+    marginBottom: 4,
+  },
+  description: {
+    fontSize: 12,
+    color: "#CCC",
+    marginBottom: 8,
+  },
+  button: {
+    backgroundColor: "#FF6F00",
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 5,
+    alignItems: "center",
+  },
+  buttonText: {
+    fontSize: 12,
+    fontWeight: "bold",
+    color: "#FFF",
+  },
+});
 
 export default ProductCard;

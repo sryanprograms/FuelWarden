@@ -8,13 +8,11 @@ const Header = ({ greetingText = "Settings", userName = "User", logoSource }) =>
         <Text style={styles.greetingText}>{greetingText}</Text>
         <Text style={styles.userName}>{userName}</Text>
       </View>
-      <View>
-        <Image
-          source={logoSource}
-          style={styles.logo}
-          resizeMode="contain"
-        />
-      </View>
+      <Image
+        source={logoSource}
+        style={styles.logo}
+        resizeMode="contain"
+      />
     </View>
   );
 };
@@ -24,8 +22,10 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    padding: 16,
-    backgroundColor: "#161622",
+    width: "100%",
+    paddingHorizontal: 16, // Consistent horizontal padding
+    paddingVertical: 12,  // Sleeker vertical padding
+    backgroundColor: "#161622", // Matches the Profile page background
   },
   greetingText: {
     fontSize: 14,
@@ -38,8 +38,8 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   logo: {
-    width: 36,
-    height: 36,
+    width: 40,
+    height: 40,
   },
 });
 

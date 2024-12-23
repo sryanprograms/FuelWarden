@@ -6,13 +6,34 @@ const PersonalInformationSection = ({ initialData, onSave }) => {
   const [name, setName] = useState(initialData?.name || "");
   const [age, setAge] = useState(initialData?.age || "");
   const [gender, setGender] = useState(initialData?.gender || "");
-  const [height, setHeight] = useState(initialData?.height || "");
+  const [heightFeet, setHeightFeet] = useState(initialData?.heightFeet || "");
+  const [heightInches, setHeightInches] = useState(initialData?.heightInches || "");
   const [weight, setWeight] = useState(initialData?.weight || "");
 
+  const validateNumericInput = (value) => /^[0-9]*$/.test(value);
+
   const handleSave = () => {
-    if (name && age && gender && height && weight) {
-      onSave({ name, age, gender, height, weight });
+    if (
+      name &&
+      age &&
+      gender &&
+      validateNumericInput(heightFeet) &&
+      validateNumericInput(heightInches) &&
+      weight
+    ) {
+      onSave({
+        name,
+        age,
+        gender,
+        heightFeet,
+        heightInches,
+        weight,
+      });
     }
+  };
+
+  const theme = {
+    colors: { text: "white", placeholder: "gray", primary: "#FFA001" },
   };
 
   return (
@@ -33,15 +54,9 @@ const PersonalInformationSection = ({ initialData, onSave }) => {
           placeholder="Enter your name"
           mode="outlined"
           className="bg-gray-800"
-          theme={{
-            colors: { text: "white", placeholder: "gray", primary: "#FFA001" },
-          }}
+          theme={theme}
         />
-        <HelperText
-          type="error"
-          visible={!name}
-          style={{ color: "#FFA001" }}
-        >
+        <HelperText type="error" visible={!name} style={{ color: "#FFA001" }}>
           Name is required.
         </HelperText>
 
@@ -54,15 +69,9 @@ const PersonalInformationSection = ({ initialData, onSave }) => {
           mode="outlined"
           keyboardType="numeric"
           className="bg-gray-800"
-          theme={{
-            colors: { text: "white", placeholder: "gray", primary: "#FFA001" },
-          }}
+          theme={theme}
         />
-        <HelperText
-          type="error"
-          visible={!age}
-          style={{ color: "#FFA001" }}
-        >
+        <HelperText type="error" visible={!age} style={{ color: "#FFA001" }}>
           Age is required.
         </HelperText>
 
@@ -104,53 +113,53 @@ const PersonalInformationSection = ({ initialData, onSave }) => {
             Non-Binary/Other
           </Button>
         </View>
-        <HelperText
-          type="error"
-          visible={!gender}
-          style={{ color: "#FFA001" }}
-        >
+        <HelperText type="error" visible={!gender} style={{ color: "#FFA001" }}>
           Gender is required.
         </HelperText>
 
         {/* Height Input */}
-        <TextInput
-          label="Height (cm)"
-          value={height}
-          onChangeText={setHeight}
-          placeholder="Enter your height"
-          mode="outlined"
-          keyboardType="numeric"
-          className="bg-gray-800"
-          theme={{
-            colors: { text: "white", placeholder: "gray", primary: "#FFA001" },
-          }}
-        />
+        <View>
+          <TextInput
+            label="Height (feet)"
+            value={heightFeet}
+            onChangeText={setHeightFeet}
+            placeholder="Feet"
+            mode="outlined"
+            keyboardType="numeric"
+            className="bg-gray-800"
+            theme={theme}
+          />
+          <TextInput
+            label="Height (inches)"
+            value={heightInches}
+            onChangeText={setHeightInches}
+            placeholder="Inches"
+            mode="outlined"
+            keyboardType="numeric"
+            className="bg-gray-800"
+            theme={theme}
+          />
+        </View>
         <HelperText
           type="error"
-          visible={!height}
+          visible={!validateNumericInput(heightFeet) || !validateNumericInput(heightInches)}
           style={{ color: "#FFA001" }}
         >
-          Height is required.
+          Valid height in feet and inches is required.
         </HelperText>
 
         {/* Weight Input */}
         <TextInput
-          label="Weight (kg)"
+          label="Weight (lbs)"
           value={weight}
           onChangeText={setWeight}
           placeholder="Enter your weight"
           mode="outlined"
           keyboardType="numeric"
           className="bg-gray-800"
-          theme={{
-            colors: { text: "white", placeholder: "gray", primary: "#FFA001" },
-          }}
+          theme={theme}
         />
-        <HelperText
-          type="error"
-          visible={!weight}
-          style={{ color: "#FFA001" }}
-        >
+        <HelperText type="error" visible={!weight} style={{ color: "#FFA001" }}>
           Weight is required.
         </HelperText>
 
@@ -160,7 +169,14 @@ const PersonalInformationSection = ({ initialData, onSave }) => {
           onPress={handleSave}
           className="bg-secondary mt-4"
           labelStyle={{ color: "black" }}
-          disabled={!name || !age || !gender || !height || !weight}
+          disabled={
+            !name ||
+            !age ||
+            !gender ||
+            !validateNumericInput(heightFeet) ||
+            !validateNumericInput(heightInches) ||
+            !weight
+          }
         >
           Save
         </Button>

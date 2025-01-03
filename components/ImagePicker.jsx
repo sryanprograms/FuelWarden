@@ -1,4 +1,4 @@
-//Not in use
+//COMPONENT IS CURRENTLY NOT IN USE.
 import React from 'react';
 import { View, TouchableOpacity, Image, Text } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';

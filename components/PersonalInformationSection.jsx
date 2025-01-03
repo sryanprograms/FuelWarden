@@ -1,6 +1,10 @@
 import React, { useState } from "react";
-import { View, ScrollView } from "react-native";
+import { View, ScrollView, StyleSheet } from "react-native";
 import { Text, TextInput, Button, HelperText } from "react-native-paper";
+
+const theme = {
+  colors: { text: "white", placeholder: "gray", primary: "#FFA001" },
+};
 
 const PersonalInformationSection = ({ initialData, onSave }) => {
   const [name, setName] = useState(initialData?.name || "");
@@ -32,19 +36,10 @@ const PersonalInformationSection = ({ initialData, onSave }) => {
     }
   };
 
-  const theme = {
-    colors: { text: "white", placeholder: "gray", primary: "#FFA001" },
-  };
-
   return (
-    <ScrollView contentContainerStyle={{ paddingVertical: 20 }}>
-      <View className="bg-gray-900 p-5 rounded-lg space-y-4">
-        <Text
-          variant="titleLarge"
-          className="text-secondary text-center font-semibold mb-3 mt-4"
-        >
-          Personal Information
-        </Text>
+    <ScrollView contentContainerStyle={styles.container}>
+      <View style={styles.card}>
+        <Text style={styles.title}>Personal Information</Text>
 
         {/* Name Input */}
         <TextInput
@@ -53,10 +48,10 @@ const PersonalInformationSection = ({ initialData, onSave }) => {
           onChangeText={setName}
           placeholder="Enter your name"
           mode="outlined"
-          className="bg-gray-800"
+          style={styles.input}
           theme={theme}
         />
-        <HelperText type="error" visible={!name} style={{ color: "#FFA001" }}>
+        <HelperText type="error" visible={!name} style={styles.errorText}>
           Name is required.
         </HelperText>
 
@@ -68,34 +63,40 @@ const PersonalInformationSection = ({ initialData, onSave }) => {
           placeholder="Enter your age"
           mode="outlined"
           keyboardType="numeric"
-          className="bg-gray-800"
+          style={styles.input}
           theme={theme}
         />
-        <HelperText type="error" visible={!age} style={{ color: "#FFA001" }}>
+        <HelperText type="error" visible={!age} style={styles.errorText}>
           Age is required.
         </HelperText>
 
         {/* Gender Selection */}
-        <View className="space-y-2">
-          <Text className="text-gray-400 font-bold">Select Gender:</Text>
-          <View className="flex-row justify-between">
+        <View style={styles.genderSection}>
+          <Text style={styles.label}>Select Gender:</Text>
+          <View style={styles.genderRow}>
             <Button
               mode={gender === "Male" ? "contained" : "outlined"}
               onPress={() => setGender("Male")}
-              className={`${
-                gender === "Male" ? "bg-secondary" : "bg-gray-800"
-              } flex-1 mx-1`}
-              labelStyle={{ color: gender === "Male" ? "black" : "white" }}
+              style={[
+                styles.genderButton,
+                gender === "Male" && styles.activeGenderButton,
+              ]}
+              labelStyle={
+                gender === "Male" ? styles.activeLabel : styles.inactiveLabel
+              }
             >
               Male
             </Button>
             <Button
               mode={gender === "Female" ? "contained" : "outlined"}
               onPress={() => setGender("Female")}
-              className={`${
-                gender === "Female" ? "bg-secondary" : "bg-gray-800"
-              } flex-1 mx-1`}
-              labelStyle={{ color: gender === "Female" ? "black" : "white" }}
+              style={[
+                styles.genderButton,
+                gender === "Female" && styles.activeGenderButton,
+              ]}
+              labelStyle={
+                gender === "Female" ? styles.activeLabel : styles.inactiveLabel
+              }
             >
               Female
             </Button>
@@ -103,22 +104,25 @@ const PersonalInformationSection = ({ initialData, onSave }) => {
           <Button
             mode={gender === "Non-Binary/Other" ? "contained" : "outlined"}
             onPress={() => setGender("Non-Binary/Other")}
-            className={`${
-              gender === "Non-Binary/Other" ? "bg-secondary" : "bg-gray-800"
-            } mt-1`}
-            labelStyle={{
-              color: gender === "Non-Binary/Other" ? "black" : "white",
-            }}
+            style={[
+              styles.genderButton,
+              gender === "Non-Binary/Other" && styles.activeGenderButton,
+            ]}
+            labelStyle={
+              gender === "Non-Binary/Other"
+                ? styles.activeLabel
+                : styles.inactiveLabel
+            }
           >
             Non-Binary/Other
           </Button>
         </View>
-        <HelperText type="error" visible={!gender} style={{ color: "#FFA001" }}>
+        <HelperText type="error" visible={!gender} style={styles.errorText}>
           Gender is required.
         </HelperText>
 
         {/* Height Input */}
-        <View>
+        <View style={styles.heightGroup}>
           <TextInput
             label="Height (feet)"
             value={heightFeet}
@@ -126,7 +130,7 @@ const PersonalInformationSection = ({ initialData, onSave }) => {
             placeholder="Feet"
             mode="outlined"
             keyboardType="numeric"
-            className="bg-gray-800"
+            style={styles.halfInput}
             theme={theme}
           />
           <TextInput
@@ -136,14 +140,14 @@ const PersonalInformationSection = ({ initialData, onSave }) => {
             placeholder="Inches"
             mode="outlined"
             keyboardType="numeric"
-            className="bg-gray-800"
+            style={styles.halfInput}
             theme={theme}
           />
         </View>
         <HelperText
           type="error"
           visible={!validateNumericInput(heightFeet) || !validateNumericInput(heightInches)}
-          style={{ color: "#FFA001" }}
+          style={styles.errorText}
         >
           Valid height in feet and inches is required.
         </HelperText>
@@ -156,10 +160,10 @@ const PersonalInformationSection = ({ initialData, onSave }) => {
           placeholder="Enter your weight"
           mode="outlined"
           keyboardType="numeric"
-          className="bg-gray-800"
+          style={styles.input}
           theme={theme}
         />
-        <HelperText type="error" visible={!weight} style={{ color: "#FFA001" }}>
+        <HelperText type="error" visible={!weight} style={styles.errorText}>
           Weight is required.
         </HelperText>
 
@@ -167,8 +171,8 @@ const PersonalInformationSection = ({ initialData, onSave }) => {
         <Button
           mode="contained"
           onPress={handleSave}
-          className="bg-secondary mt-4"
-          labelStyle={{ color: "black" }}
+          style={styles.saveButton}
+          labelStyle={styles.saveButtonLabel}
           disabled={
             !name ||
             !age ||
@@ -184,5 +188,74 @@ const PersonalInformationSection = ({ initialData, onSave }) => {
     </ScrollView>
   );
 };
+
+const styles = StyleSheet.create({
+  container: { paddingVertical: 20 },
+  card: {
+    backgroundColor: "#2c2c2c",
+    borderRadius: 10,
+    padding: 20,
+    marginTop: 50,
+  },
+  title: {
+    textAlign: "center",
+    fontSize: 24,
+    fontWeight: "bold",
+    color: "#FFA001",
+    marginBottom: 20,
+  },
+  input: {
+    backgroundColor: "#1e1e1e",
+    marginBottom: 10,
+  },
+  errorText: {
+    color: "#FFA001",
+  },
+  label: {
+    color: "#FFFFFF",
+    marginBottom: 10,
+  },
+  genderSection: {
+    marginBottom: 10,
+  },
+  genderRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 10,
+  },
+  genderButton: {
+    flex: 1,
+    margin: 5,
+    borderWidth: 1,
+    borderColor: "#FFA001",
+  },
+  activeGenderButton: {
+    backgroundColor: "#FFA001",
+  },
+  activeLabel: {
+    color: "#1e1e1e",
+  },
+  inactiveLabel: {
+    color: "#FFFFFF",
+  },
+  heightGroup: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 10,
+  },
+  halfInput: {
+    flex: 1,
+    margin: 5,
+  },
+  saveButton: {
+    backgroundColor: "#FFA001",
+    marginTop: 20,
+    padding: 10,
+  },
+  saveButtonLabel: {
+    color: "#1e1e1e",
+    fontWeight: "bold",
+  },
+});
 
 export default PersonalInformationSection;

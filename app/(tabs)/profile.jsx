@@ -1,5 +1,13 @@
-import React, { useState } from "react";
-import { View, Text, Modal, ScrollView, Pressable, TouchableOpacity } from "react-native";
+import React, { useState, useMemo } from "react";
+import {
+  View,
+  Text,
+  Modal,
+  ScrollView,
+  TouchableOpacity,
+  StyleSheet,
+  Dimensions,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import PersonalInformationSection from "../../components/PersonalInformationSection";
@@ -9,36 +17,41 @@ import GoalsSection from "../../components/GoalsSection";
 import MealPreferencesSection from "../../components/MealPreferencesSection";
 import Header from "../../components/Header";
 import { images } from "../../constants";
+import { useNavigation } from "expo-router"; // Updated for Expo Router
+import { useMealPlan } from "../../context/MealPlanContext"; // Context API Hook
 
-const Profile = ({ initialData, onSave }) => {
-  const [currentSection, setCurrentSection] = useState(null);
-  const [formData, setFormData] = useState(initialData || {});
+const Profile = () => {
+  const [currentSection, setCurrentSection] = useState(null); // Track open modal
+  const { userInput, setUserInput } = useMealPlan(); // Access Context state
+  const navigation = useNavigation(); // Navigation for screen transitions
 
+  // Save data from each section to Context
   const handleSave = (data) => {
-    setFormData({ ...formData, ...data });
-    setCurrentSection(null);
+    setUserInput((prev) => ({ ...prev, ...data })); // Merge with existing data
+    setCurrentSection(null); // Close modal
   };
 
+  // Navigate to Meal Plan screen
   const handleGenerateMealPlan = () => {
-    if (typeof onSave === "function") {
-      onSave(formData);
-    } else {
-      console.error("onSave is not a function");
-    }
+    navigation.navigate("mealPlan"); // Navigate without params
   };
 
-  const sections = [
-    { id: "personalInformation", label: "Personal Information", icon: "person" },
-    { id: "trainingSchedule", label: "Training Schedule", icon: "fitness" },
-    { id: "dietaryPreferences", label: "Dietary Preferences", icon: "nutrition" },
-    { id: "goals", label: "Goals", icon: "flag" },
-    { id: "mealPreferences", label: "Meal Preferences", icon: "restaurant" },
-  ];
+  // Define sections for the profile screen
+  const sections = useMemo(
+    () => [
+      { id: "personalInformation", label: "Personal Information", icon: "person" },
+      { id: "trainingSchedule", label: "Training Schedule", icon: "fitness" },
+      { id: "dietaryPreferences", label: "Dietary Preferences", icon: "nutrition" },
+      { id: "goals", label: "Goals", icon: "flag" },
+      { id: "mealPreferences", label: "Meal Preferences", icon: "restaurant" },
+    ],
+    []
+  );
 
   return (
-    <View className="flex-1 bg-[#161622]">
+    <View style={styles.container}>
       {/* Header */}
-      <SafeAreaView className="bg-[#161622]">
+      <SafeAreaView>
         <Header
           greetingText="Profile"
           userName="Settings"
@@ -46,38 +59,39 @@ const Profile = ({ initialData, onSave }) => {
         />
       </SafeAreaView>
 
-      <ScrollView contentContainerStyle={{ paddingBottom: 20 }} className="px-4 py-6">
-        <View className="space-y-6">
-          {/* Profile Sections */}
+      {/* Profile Sections */}
+      <ScrollView contentContainerStyle={styles.scrollContainer}>
+        <View style={styles.sectionsContainer}>
           {sections.map((section) => (
             <TouchableOpacity
               key={section.id}
               onPress={() => setCurrentSection(section.id)}
-              className="flex-row items-center bg-gray-800 p-4 rounded-lg"
+              style={styles.sectionButton}
             >
-              <Ionicons name={section.icon} size={24} color="#FFA001" className="mr-4" />
-              <Text className="text-white text-lg font-medium flex-1">
-                {section.label}
-              </Text>
+              <Ionicons
+                name={section.icon}
+                size={24}
+                color="#FFA001"
+                style={styles.icon}
+              />
+              <Text style={styles.sectionText}>{section.label}</Text>
               <Ionicons name="chevron-forward" size={24} color="#FFF" />
             </TouchableOpacity>
           ))}
         </View>
 
-        {/* Generate Meal Plan */}
-        <View className="mt-10">
+        {/* Generate Meal Plan Button */}
+        <View style={styles.buttonContainer}>
           <TouchableOpacity
             onPress={handleGenerateMealPlan}
-            className="bg-secondary py-4 rounded-lg"
+            style={styles.generateButton}
           >
-            <Text className="text-center text-black font-semibold text-lg">
-              Create New Meal Plan
-            </Text>
+            <Text style={styles.buttonText}>Create New Meal Plan</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
 
-      {/* Modals */}
+      {/* Modals for Profile Sections */}
       {sections.map((section) => (
         <Modal
           key={section.id}
@@ -85,61 +99,51 @@ const Profile = ({ initialData, onSave }) => {
           transparent
           animationType="slide"
         >
-          <View className="flex-1 bg-black bg-opacity-50 justify-center">
-            <View className="bg-gray-800 p-6 h-full w-full rounded-t-lg">
-              {/* Top-right Close Icon */}
-              <Pressable
-                onPress={() => setCurrentSection(null)}
-                className="absolute top-4 right-4"
-              >
-                <Ionicons name="close" size={28} color="#FFA001" />
-              </Pressable>
-
-              {/* Section Components */}
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              {/* Render the appropriate section component */}
               {section.id === "personalInformation" && (
                 <PersonalInformationSection
-                  initialData={formData}
+                  initialData={userInput}
                   onSave={handleSave}
                   onClose={() => setCurrentSection(null)}
                 />
               )}
               {section.id === "trainingSchedule" && (
                 <TrainingScheduleSection
-                  initialData={formData}
+                  initialData={userInput}
                   onSave={handleSave}
                   onClose={() => setCurrentSection(null)}
                 />
               )}
               {section.id === "dietaryPreferences" && (
                 <DietaryPreferencesSection
-                  initialData={formData}
+                  initialData={userInput}
                   onSave={handleSave}
                   onClose={() => setCurrentSection(null)}
                 />
               )}
               {section.id === "goals" && (
                 <GoalsSection
-                  initialData={formData}
+                  initialData={userInput}
                   onSave={handleSave}
                   onClose={() => setCurrentSection(null)}
                 />
               )}
               {section.id === "mealPreferences" && (
                 <MealPreferencesSection
-                  initialData={formData}
+                  initialData={userInput}
                   onSave={handleSave}
                   onClose={() => setCurrentSection(null)}
                 />
               )}
 
-              {/* Bottom Close Button */}
+              {/* Close Modal Button */}
               <TouchableOpacity
                 onPress={() => setCurrentSection(null)}
-                className="mt-4 bg-gray-700 py-3 rounded-lg"
+                style={styles.closeButton}
               >
-                <Text className="text-center text-secondary font-medium">
-                  Close
-                </Text>
+                <Text style={styles.closeButtonText}>Close</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -148,5 +152,82 @@ const Profile = ({ initialData, onSave }) => {
     </View>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#161622",
+  },
+  scrollContainer: {
+    paddingBottom: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 24,
+  },
+  sectionsContainer: {
+    marginBottom: 20,
+  },
+  sectionButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#333",
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 12,
+    shadowColor: "#000",
+    shadowOpacity: 0.2,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 8,
+  },
+  icon: {
+    marginRight: 12,
+  },
+  sectionText: {
+    flex: 1,
+    color: "#FFF",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  buttonContainer: {
+    marginTop: 20,
+  },
+  generateButton: {
+    backgroundColor: "#FFA001",
+    paddingVertical: 14,
+    borderRadius: 10,
+    shadowColor: "#000",
+    shadowOpacity: 0.3,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 10,
+  },
+  buttonText: {
+    textAlign: "center",
+    color: "#000",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.7)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalContent: {
+    backgroundColor: "#222",
+    padding: 20,
+    borderRadius: 20,
+    width: Dimensions.get("window").width * 0.9,
+  },
+  closeButton: {
+    marginTop: 20,
+    backgroundColor: "#444",
+    paddingVertical: 12,
+    borderRadius: 10,
+  },
+  closeButtonText: {
+    textAlign: "center",
+    color: "#FFA001",
+    fontWeight: "600",
+  },
+});
 
 export default Profile;

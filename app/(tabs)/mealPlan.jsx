@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -8,52 +8,134 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import MealPlanFetcher from '../../components/MealPlanFetcher';
-import CustomButton from '../../components/CustomButton';
+import { useMealPlan } from "../../context/MealPlanContext";
+import MealPlanFetcher from "../../components/MealPlanFetcher";
+
+const dayMap = {
+  sunday: "su",
+  monday: "mo",
+  tuesday: "tu",
+  wednesday: "we",
+  thursday: "th",
+  friday: "fr",
+  saturday: "sa",
+};
 
 export default function MealPlan() {
+  const { userInput, mealPlan, setMealPlan } = useMealPlan(); // Access data from Context
   const daysOfWeek = ["su", "mo", "tu", "we", "th", "fr", "sa"];
-
-  const getCurrentDateInfo = () => {
-    const today = new Date();
-    const day = daysOfWeek[today.getDay()];
-    const date = today.getDate();
-    const month = today.toLocaleString("default", { month: "long" });
-    return { day, date, month };
-  };
-
-  const [currentDateInfo, setCurrentDateInfo] = useState(getCurrentDateInfo());
-  const [selectedDay, setSelectedDay] = useState(currentDateInfo.day);
+  const [selectedDay, setSelectedDay] = useState(daysOfWeek[new Date().getDay()]);
   const [selectedMeal, setSelectedMeal] = useState(null);
-  const [mealPlan, setMealPlan] = useState(null);
-  const [userInput, setUserInput] = useState(null);
 
-  useEffect(() => {
-    if (userInput) {
-      fetchMealPlan(userInput);
-    }
-  }, [userInput]);
+  if (!userInput) {
+    return (
+      <View className="flex-1 justify-center items-center bg-[#161622]">
+        <Text style={{ color: "white", fontSize: 16 }}>
+          No data provided. Please go back and try again.
+        </Text>
+      </View>
+    );
+  }
 
-  const fetchMealPlan = (input) => {
-    // Fetch meal plan based on user input
-    MealPlanFetcher({ userInput: input, onDataFetched: handleDataFetched });
-  };
+  // const handleDataFetched = (data) => {
+  //   if (!data || !Array.isArray(data.week)) {
+  //     console.error("Invalid data structure:", data);
+  //     return;
+  //   }
 
-  const handleDataFetched = (data) => {
-    setMealPlan(data.week.reduce((acc, dayPlan) => {
-      acc[dayPlan.day.toLowerCase().slice(0, 2)] = dayPlan.meals;
+  //   const parsedMealPlan = data.week.reduce((acc, dayPlan) => {
+  //     const dayKey = dayMap[dayPlan?.day?.toLowerCase()];
+  //     if (!dayKey || !Array.isArray(dayPlan.meals)) {
+  //       console.error("Skipping invalid dayPlan:", dayPlan);
+  //       return acc; // Skip malformed days
+  //     }
+
+  //     acc[dayKey] = dayPlan.meals || [];
+  //     return acc;
+  //   }, {});
+
+  //   console.log("Parsed Meal Plan:", parsedMealPlan);
+  //   setMealPlan(parsedMealPlan);
+  // };
+
+  const handleDataFetched = () => {
+    const sampleMealPlanData = {
+      data: {
+        name: "Weekly_Athlete_Plan",
+        week: [
+          {
+            day: "Monday",
+            meals: [
+              {
+                time: "8:00 AM",
+                type: "Breakfast",
+                name: "Eggs_and_Toast",
+                details: "Scrambled eggs with whole wheat toast.",
+                description: "High in protein and fiber.",
+                alternatives: [
+                  {
+                    name: "Oatmeal_with_Fruit",
+                    details: "Steel-cut oats with fresh berries.",
+                    description: "Rich in fiber and antioxidants."
+                  }
+                ]
+              },
+              {
+                time: "12:00 PM",
+                type: "Lunch",
+                name: "Chicken_and_Quinoa",
+                details: "Grilled chicken breast with quinoa and steamed broccoli.",
+                description: "Packed with lean protein and complex carbs.",
+                alternatives: [
+                  {
+                    name: "Grilled_Salmon_Salad",
+                    details: "Mixed greens topped with grilled salmon and balsamic dressing.",
+                    description: "Rich in omega-3 fatty acids and fiber."
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            day: "Tuesday",
+            meals: [
+              {
+                time: "7:00 AM",
+                type: "Breakfast",
+                name: "Smoothie_Bowl",
+                details: "Banana, spinach, almond milk, and chia seeds blended.",
+                description: "Rich in vitamins and healthy fats.",
+                alternatives: [
+                  {
+                    name: "Avocado_Toast",
+                    details: "Whole-grain toast topped with mashed avocado.",
+                    description: "Great source of fiber and healthy fats."
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    };
+  
+    const parsedMealPlan = sampleMealPlanData.data.week.reduce((acc, dayPlan) => {
+      const dayKey = dayMap[dayPlan.day.toLowerCase()];
+      if (dayKey && Array.isArray(dayPlan.meals)) {
+        acc[dayKey] = dayPlan.meals;
+      }
       return acc;
-    }, {}));
+    }, {});
+  
+    console.log("Parsed Meal Plan:", parsedMealPlan);
+    setMealPlan(parsedMealPlan);
   };
+  
 
-  const handleProfileSave = (input) => {
-    setUserInput(input);
-  };
-
-  const renderMeal = ({ item, index }) => (
+  const renderMeal = ({ item }) => (
     <TouchableOpacity
       className="flex-row items-start mb-4"
-      onPress={() => setSelectedMeal({ ...item, index })}
+      onPress={() => setSelectedMeal(item)}
     >
       <View className="items-center mr-3">
         <View className="w-4 h-4 bg-orange-500 rounded-full" />
@@ -70,23 +152,12 @@ export default function MealPlan() {
   const handleAlternativeSelection = (alternative) => {
     if (!selectedMeal) return;
 
-    const updatedMeals = mealPlan[selectedDay].map((meal, index) => {
-      if (index === selectedMeal.index) {
-        const newAlternatives = [
-          ...meal.alternatives.filter((alt) => alt.name !== alternative.name),
-          { name: meal.name, description: meal.description },
-        ];
-
-        return {
-          ...meal,
-          name: alternative.name,
-          details: alternative.details,
-          description: alternative.description,
-          alternatives: newAlternatives,
-        };
-      }
-      return meal;
-    });
+    // Update the meal plan with the selected alternative
+    const updatedMeals = mealPlan[selectedDay].map((meal) =>
+      meal.name === selectedMeal.name
+        ? { ...meal, ...alternative }
+        : meal
+    );
 
     setMealPlan({ ...mealPlan, [selectedDay]: updatedMeals });
     setSelectedMeal(null);
@@ -94,9 +165,9 @@ export default function MealPlan() {
 
   return (
     <SafeAreaView className="flex-1 bg-[#161622]">
-      {userInput && (
-        <MealPlanFetcher userInput={userInput} onDataFetched={handleDataFetched} />
-      )}
+      {/* Fetch the meal plan */}
+      <MealPlanFetcher userInput={userInput} onDataFetched={handleDataFetched} />
+
       {/* Calendar Header */}
       <View className="flex-row items-center justify-between px-4 py-2 bg-gray-800">
         <TouchableOpacity
@@ -112,15 +183,12 @@ export default function MealPlan() {
           <Ionicons name="chevron-back" size={24} color="#FFF" />
         </TouchableOpacity>
         <Text className="text-white text-lg font-bold">
-          {selectedDay.toUpperCase()}, {currentDateInfo.month}{" "}
-          {currentDateInfo.date}
+          {selectedDay.toUpperCase()}
         </Text>
         <TouchableOpacity
           onPress={() =>
             setSelectedDay(
-              daysOfWeek[
-                (daysOfWeek.indexOf(selectedDay) + 1) % daysOfWeek.length
-              ]
+              daysOfWeek[(daysOfWeek.indexOf(selectedDay) + 1) % daysOfWeek.length]
             )
           }
         >
@@ -175,18 +243,14 @@ export default function MealPlan() {
             <Text className="text-white text-sm mb-1 font-semibold">
               Alternatives:
             </Text>
-            {selectedMeal?.alternatives.map((alternative, index) => (
+            {selectedMeal?.alternatives?.map((alt, index) => (
               <TouchableOpacity
                 key={index}
                 className="w-full bg-gray-700 py-2 px-3 my-2 rounded-md"
-                onPress={() => handleAlternativeSelection(alternative)}
+                onPress={() => handleAlternativeSelection(alt)}
               >
-                <Text className="text-white font-medium">
-                  {alternative.name}
-                </Text>
-                <Text className="text-gray-300 text-sm">
-                  {alternative.description}
-                </Text>
+                <Text className="text-white font-medium">{alt.name}</Text>
+                <Text className="text-gray-300 text-sm">{alt.details}</Text>
               </TouchableOpacity>
             ))}
             <TouchableOpacity
@@ -201,4 +265,3 @@ export default function MealPlan() {
     </SafeAreaView>
   );
 }
- 

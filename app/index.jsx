@@ -12,7 +12,7 @@ import { useGlobalContext } from '../context//GlobalProvider'
 export default function App() {
     const { isLoading, isLoggedIn } = useGlobalContext();
 
-    if(!isLoading && isLoggedIn) return <Redirect href="/shop "/>
+    if(!isLoading && isLoggedIn) return <Redirect href="/dashboard "/>
 
     return (
         <SafeAreaView className="bg-primary h-full">

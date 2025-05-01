@@ -33,8 +33,8 @@ const Profile = () => {
 
   // Navigate to Meal Plan screen
   const handleGenerateMealPlan = () => {
-    navigation.navigate("mealPlan"); // Navigate without params
-  };
+    navigation.navigate("mealPlan", { autoGenerate: true }); // Pass a param to trigger auto-generation
+  };  
 
   // Define sections for the profile screen
   const sections = useMemo(
@@ -80,13 +80,13 @@ const Profile = () => {
           ))}
         </View>
 
-        {/* Generate Meal Plan Button */}
+        {/* Go to meal planner */}
         <View style={styles.buttonContainer}>
           <TouchableOpacity
-            onPress={handleGenerateMealPlan}
+            onPress={() => navigation.navigate("mealPlan", { autoGenerate: true })}
             style={styles.generateButton}
           >
-            <Text style={styles.buttonText}>Create New Meal Plan</Text>
+            <Text style={styles.buttonText}>Go to Meal Planner</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>

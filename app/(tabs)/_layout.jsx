@@ -23,6 +23,7 @@ export default function Layout() {
       <PaperProvider>
         <Tabs
           screenOptions={{
+            headerShown: false, // disable header globally for all tabs
             tabBarShowLabel: false,
             tabBarActiveTintColor: "#FFA001",
             tabBarInactiveTintColor: "#CDCDE0",
@@ -38,31 +39,37 @@ export default function Layout() {
             name="mealPlan"
             options={{
               title: "Meal Plan",
-              headerShown: false,
-              tabBarIcon: ({ color }) => <TabIcon icon={icons.profile} color={color} />,
+              tabBarIcon: ({ color }) => <TabIcon icon={icons.bookmark} color={color} />,
             }}
           />
           <Tabs.Screen
             name="scan"
             options={{
               title: "Scan",
-              headerShown: false,
               tabBarIcon: ({ color }) => <TabIcon icon={icons.scan} color={color} />,
             }}
           />
           <Tabs.Screen
-            name="shop"
+            name="dashboard"
             options={{
-              title: "Shop",
-              headerShown: false,
+              title: "Dashboard",
               tabBarIcon: ({ color }) => <TabIcon icon={icons.home} color={color} />,
             }}
           />
+        <Tabs.Screen
+          name="shop"
+          options={{
+            title: "Shop",
+            headerShown: false,
+            tabBarItemStyle: { display: "none" },
+          }}
+        />
+
+
           <Tabs.Screen
             name="profile"
             options={{
               title: "Profile",
-              headerShown: false,
               tabBarIcon: ({ color }) => <TabIcon icon={icons.profile} color={color} />,
             }}
           />

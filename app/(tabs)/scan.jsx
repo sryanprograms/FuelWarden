@@ -9,6 +9,7 @@ import nsfBadge from "../../assets/nsf_certified.png";
 import informedSportBadge from "../../assets/informed_sport.png";
 import axios from "axios";
 
+
 const { width, height } = Dimensions.get("window");
 const scanBoxWidth = 300; // Wider than it is tall
 const scanBoxHeight = 100; // Smaller height for a barcode shape
@@ -101,7 +102,7 @@ export default function Scan() {
         const badges = matchingLabels.map((label) => ({
           label: label.replace(/-/g, " "),
           image: labelImages[label],
-        }));
+        })); 
 
         const prompt = `
           You are a sports nutrition expert. Based on the following product information, provide a brief summary (2–3 sentences) explaining how 
